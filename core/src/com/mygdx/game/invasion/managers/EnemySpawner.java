@@ -5,32 +5,31 @@ import com.badlogic.gdx.utils.Array;
 import com.mygdx.game.invasion.entities.Enemy;
 import com.mygdx.game.invasion.entities.FastEnemy;
 import com.mygdx.game.invasion.entities.TankEnemy;
+import com.mygdx.game.invasion.entities.ZigZagEnemy;
 import java.util.Random;
 
 public class EnemySpawner {
 
     private float spawnTimer;
-    private float spawnInterval = 2f; // Cada 2 segundos aparece un enemigo
     private Random random;
-    private int maxEnemies = 10; // Máximo de enemigos en pantalla
+    private DifficultyManager difficultyManager;
 
-    public EnemySpawner() {
+    public EnemySpawner(DifficultyManager difficultyManager) {
         this.random = new Random();
         this.spawnTimer = 0;
+        this.difficultyManager = difficultyManager;
     }
 
     public void update(float delta, Array<Enemy> enemies) {
         spawnTimer += delta;
 
+        float spawnInterval = difficultyManager.getSpawnInterval();
+        int maxEnemies = difficultyManager.getMaxEnemies();
+
         // Si es tiempo de spawn y no hay demasiados enemigos
         if (spawnTimer >= spawnInterval && enemies.size < maxEnemies) {
             spawnEnemy(enemies);
             spawnTimer = 0;
-
-            // Aumenta la dificultad con el tiempo (spawn más rápido)
-            if (spawnInterval > 0.5f) {
-                spawnInterval -= 0.01f;
-            }
         }
     }
 
@@ -41,19 +40,17 @@ public class EnemySpawner {
         // Aparece arriba de la pantalla
         float y = Gdx.graphics.getHeight() + 50;
 
-        // 70% probabilidad de FastEnemy, 30% de TankEnemy
-        if (random.nextFloat() < 0.7f) {
-            enemies.add(new FastEnemy(x, y));
-        } else {
+        float rand = random.nextFloat();
+        float zigzagChance = difficultyManager.getZigZagChance();
+        float tankChance = difficultyManager.getTankChance();
+
+        // Distribución de enemigos según la dificultad
+        if (rand < zigzagChance) {
+            enemies.add(new ZigZagEnemy(x, y));
+        } else if (rand < zigzagChance + tankChance) {
             enemies.add(new TankEnemy(x, y));
+        } else {
+            enemies.add(new FastEnemy(x, y));
         }
-    }
-
-    public void setSpawnInterval(float interval) {
-        this.spawnInterval = interval;
-    }
-
-    public void setMaxEnemies(int max) {
-        this.maxEnemies = max;
     }
 }

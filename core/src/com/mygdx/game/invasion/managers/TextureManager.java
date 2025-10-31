@@ -28,6 +28,8 @@ public class TextureManager {
             textures.put("player_ship", new Texture("nave.png"));
             textures.put("fast_enemy", new Texture("enemigo_rapido.png"));
             textures.put("tank_enemy", new Texture("enemigo_tanque.png"));
+            textures.put("zigzag_enemy", new Texture("enemigo_zigzag.png"));
+            textures.put("powerup_double", new Texture("powerup_doble.png"));
             textures.put("player_bullet", new Texture("bala.png"));
         } catch (Exception e) {
             Gdx.app.error("TextureManager", "Error loading textures: " + e.getMessage());
