@@ -18,6 +18,12 @@ public class PlayerShip {
     private float speed = 300f;
     private Texture texture;
 
+    // Sistema de invencibilidad
+    private boolean invincible = false;
+    private float invincibilityTimer = 0;
+    private float invincibilityDuration = 2f; // 2 segundos de invencibilidad
+    private float blinkTimer = 0;
+
     private ShootStrategy currentWeapon;
 
     public PlayerShip(float x, float y) {
@@ -26,12 +32,26 @@ public class PlayerShip {
         this.texture = TextureManager.getInstance().getTexture("player_ship");
         this.currentWeapon = new SingleShoot();
 
-        this.bounds = new Rectangle(x, y, texture.getWidth(), texture.getHeight());
+        // Colisión más pequeña que la textura (hitbox más preciso)
+        float hitboxReduction = 0.3f; // 30% más pequeño
+        float width = texture.getWidth() * (1 - hitboxReduction);
+        float height = texture.getHeight() * (1 - hitboxReduction);
+        this.bounds = new Rectangle(x, y, width, height);
     }
 
-    // CORREGIDO: Ahora recibe la lista de balas como parámetro
     public void update(float delta, Array<Bullet> bullets) {
-        // Movimiento libre (arriba, abajo, izquierda, derecha)
+        // Actualiza invencibilidad
+        if (invincible) {
+            invincibilityTimer += delta;
+            blinkTimer += delta;
+
+            if (invincibilityTimer >= invincibilityDuration) {
+                invincible = false;
+                invincibilityTimer = 0;
+            }
+        }
+
+        // Movimiento libre
         if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             x -= speed * delta;
         }
@@ -45,31 +65,41 @@ public class PlayerShip {
             y -= speed * delta;
         }
 
-        // Limita la nave a los bordes de la pantalla
+        // Limita la nave a los bordes
         if (x < 0) x = 0;
         if (x > Gdx.graphics.getWidth() - texture.getWidth()) x = Gdx.graphics.getWidth() - texture.getWidth();
         if (y < 0) y = 0;
         if (y > Gdx.graphics.getHeight() - texture.getHeight()) y = Gdx.graphics.getHeight() - texture.getHeight();
 
-        bounds.setPosition(x, y);
+        // Actualiza hitbox (centrada en la nave)
+        float hitboxReduction = 0.3f;
+        float width = texture.getWidth() * (1 - hitboxReduction);
+        float height = texture.getHeight() * (1 - hitboxReduction);
+        float centerX = x + (texture.getWidth() - width) / 2;
+        float centerY = y + (texture.getHeight() - height) / 2;
+        bounds.set(centerX, centerY, width, height);
 
-        // Disparar - ahora pasa correctamente la lista de balas
+        // Disparar
         if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             fire(bullets);
         }
     }
 
     private void fire(Array<Bullet> bullets) {
-        // Dispara desde el centro superior
         float bulletX = this.x + texture.getWidth() / 2f;
         float bulletY = this.y + texture.getHeight();
-
-        // Llama a la estrategia y le pasa la lista
         currentWeapon.shoot(bulletX, bulletY, bullets);
     }
 
     public void render(SpriteBatch batch) {
-        batch.draw(texture, x, y);
+        // Efecto de parpadeo cuando es invencible
+        if (invincible) {
+            if ((int)(blinkTimer * 10) % 2 == 0) { // Parpadea cada 0.1 segundos
+                batch.draw(texture, x, y);
+            }
+        } else {
+            batch.draw(texture, x, y);
+        }
     }
 
     public Rectangle getBounds() {
@@ -77,7 +107,15 @@ public class PlayerShip {
     }
 
     public void takeHit() {
-        this.lives--;
+        if (!invincible) {
+            this.lives--;
+            if (lives > 0) {
+                // Activa invencibilidad después de perder una vida
+                invincible = true;
+                invincibilityTimer = 0;
+                blinkTimer = 0;
+            }
+        }
     }
 
     public int getLives() {
@@ -86,6 +124,10 @@ public class PlayerShip {
 
     public boolean isDead() {
         return lives <= 0;
+    }
+
+    public boolean isInvincible() {
+        return invincible;
     }
 
     public void setWeapon(ShootStrategy newWeapon) {

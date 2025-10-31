@@ -4,15 +4,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import java.util.Iterator;
 import com.mygdx.game.invasion.entities.Bullet;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer; // Ya no necesario para entidades, pero lo dejamos
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.mygdx.game.InvasionGame;
 import com.mygdx.game.invasion.entities.Enemy;
-import com.mygdx.game.invasion.entities.FastEnemy;
 import com.mygdx.game.invasion.entities.PlayerShip;
-import com.mygdx.game.invasion.entities.TankEnemy;
-import com.mygdx.game.invasion.managers.TextureManager; // ¡Nuevo import!
+import com.mygdx.game.invasion.managers.TextureManager;
+import com.mygdx.game.invasion.managers.EnemySpawner;
+import com.mygdx.game.invasion.ui.HUD;
 
 public class GameScreen implements Screen {
 
@@ -20,28 +19,28 @@ public class GameScreen implements Screen {
 
     private PlayerShip player;
     private Array<Enemy> enemies;
-    private Array<Bullet> playerBullets; // ¡LISTA DE BALAS!
-
-    // private ShapeRenderer shapeRenderer; // Ya no lo usaremos para entidades, puedes borrarlo si quieres
+    private Array<Bullet> playerBullets;
+    private EnemySpawner enemySpawner;
+    private HUD hud;
 
     public GameScreen(InvasionGame game) {
         this.game = game;
-        TextureManager.getInstance();
 
         this.player = new PlayerShip(Gdx.graphics.getWidth() / 2f, 50f);
-        this.playerBullets = new Array<>(); // ¡Crea la lista de balas!
+        this.playerBullets = new Array<>();
         this.enemies = new Array<>();
-        this.enemies.add(new FastEnemy(100, 400));
-        this.enemies.add(new TankEnemy(250, 450));
-        this.enemies.add(new FastEnemy(400, 400));
+        this.enemySpawner = new EnemySpawner();
+        this.hud = new HUD();
     }
 
     @Override
     public void render(float delta) {
         // --- 1. LÓGICA (Update) ---
 
-        // Pasa la lista de balas al jugador para que pueda disparar
         player.update(delta, playerBullets);
+
+        // Actualiza el spawner de enemigos
+        enemySpawner.update(delta, enemies);
 
         // Actualiza enemigos
         for (Enemy enemy : enemies) {
@@ -56,12 +55,12 @@ public class GameScreen implements Screen {
         // --- 2. LÓGICA DE COLISIÓN ---
         checkCollisions();
 
-        // --- 3. LÓGICA DE LIMPIEZA (Eliminar muertos) ---
+        // --- 3. LÓGICA DE LIMPIEZA ---
         removeDeadEntities();
 
         // --- 4. CHEQUEO DE GAME OVER ---
         if (player.isDead()) {
-            game.setScreen(new GameOverScreen(game));
+            game.setScreen(new GameOverScreen(game, hud.getScore()));
             dispose();
             return;
         }
@@ -72,11 +71,15 @@ public class GameScreen implements Screen {
         game.batch.begin();
 
         player.render(game.batch);
-        for (Enemy enemy : enemies) { enemy.render(game.batch); }
-        for (Bullet bullet : playerBullets) { bullet.render(game.batch); }
+        for (Enemy enemy : enemies) {
+            enemy.render(game.batch);
+        }
+        for (Bullet bullet : playerBullets) {
+            bullet.render(game.batch);
+        }
 
-        // Dibuja el HUD (Vidas)
-        game.font.draw(game.batch, "VIDAS: " + player.getLives(), 10, Gdx.graphics.getHeight() - 10);
+        // Dibuja el HUD
+        hud.render(game.batch, player.getLives());
 
         game.batch.end();
     }
@@ -86,32 +89,37 @@ public class GameScreen implements Screen {
         for (Bullet bullet : playerBullets) {
             for (Enemy enemy : enemies) {
                 if (bullet.getBounds().overlaps(enemy.getBounds())) {
-                    enemy.takeDamage(100); // El enemigo recibe daño (100 para matarlos de 1 golpe)
-                    bullet.setDead(true);    // La bala muere
+                    enemy.takeDamage(100);
+                    bullet.setDead(true);
+
+                    // Si el enemigo murió, suma puntos
+                    if (enemy.isDead()) {
+                        hud.addScore(enemy.getScoreValue());
+                    }
                 }
             }
         }
 
-        // Colisión: Enemigos vs Jugador
-        for (Enemy enemy : enemies) {
-            if (enemy.getBounds().overlaps(player.getBounds())) {
-                player.takeHit();     // El jugador pierde una vida
-                enemy.setDead(true);  // El enemigo muere (como un kamikaze)
-
-                // (Aquí podrías añadir invencibilidad temporal)
+        // Colisión: Enemigos vs Jugador (solo si no es invencible)
+        if (!player.isInvincible()) {
+            for (Enemy enemy : enemies) {
+                if (enemy.getBounds().overlaps(player.getBounds())) {
+                    player.takeHit();
+                    enemy.setDead(true);
+                }
             }
         }
     }
 
     private void removeDeadEntities() {
-        // Usa un Iterador para eliminar balas muertas (más seguro)
+        // Elimina balas muertas
         for (Iterator<Bullet> iter = playerBullets.iterator(); iter.hasNext(); ) {
             if (iter.next().isDead()) {
                 iter.remove();
             }
         }
 
-        // Usa un Iterador para eliminar enemigos muertos
+        // Elimina enemigos muertos
         for (Iterator<Enemy> iter = enemies.iterator(); iter.hasNext(); ) {
             if (iter.next().isDead()) {
                 iter.remove();
@@ -121,13 +129,11 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
-        // ¡Importante! Libera los recursos del TextureManager al final del juego
-        TextureManager.getInstance().dispose();
-        // Si ShapeRenderer seguía activo, también lo liberarías:
-        // if (shapeRenderer != null) shapeRenderer.dispose();
+        // NO disponemos del TextureManager aquí porque es un Singleton
+        // que se usa en múltiples pantallas
+        hud.dispose();
     }
 
-    // --- Métodos de Screen vacíos ---
     @Override public void show() { }
     @Override public void resize(int width, int height) { }
     @Override public void pause() { }
