@@ -1,13 +1,15 @@
 package com.mygdx.game.invasion.entities;
 
-// GM1.4: Hijo 1
+import com.mygdx.game.invasion.managers.TextureManager; // Importa
+
 public class FastEnemy extends Enemy {
     public FastEnemy(float x, float y) {
-        super(x, y, 50); // Poca vida
+        // Llama al constructor del padre con la textura correcta
+        super(x, y, 50, TextureManager.getInstance().getTexture("fast_enemy"));
     }
 
     @Override
     public void update(float delta) {
-        y -= 200 * delta; // Se mueve rápido
+        y -= 200 * delta;
     }
 }

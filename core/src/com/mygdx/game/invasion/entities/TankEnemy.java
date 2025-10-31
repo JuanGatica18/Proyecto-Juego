@@ -1,13 +1,15 @@
 package com.mygdx.game.invasion.entities;
 
-// GM1.4: Hijo 2
+import com.mygdx.game.invasion.managers.TextureManager; // Importa
+
 public class TankEnemy extends Enemy {
     public TankEnemy(float x, float y) {
-        super(x, y, 300); // Mucha vida
+        // Llama al constructor del padre con la textura correcta
+        super(x, y, 300, TextureManager.getInstance().getTexture("tank_enemy"));
     }
 
     @Override
     public void update(float delta) {
-        y -= 50 * delta; // Se mueve lento
+        y -= 50 * delta;
     }
 }
