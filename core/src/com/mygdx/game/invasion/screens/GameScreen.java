@@ -118,7 +118,7 @@ public class GameScreen implements Screen {
             }
         }
     }
-    
+
     @Override
     public void dispose() {
         // ¡Importante! Libera los recursos del TextureManager al final del juego

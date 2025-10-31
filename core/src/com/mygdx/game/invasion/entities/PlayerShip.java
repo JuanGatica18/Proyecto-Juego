@@ -68,7 +68,7 @@ public class PlayerShip {
         currentWeapon.shoot(bulletX, bulletY, bullets);
     }
 
-    // ¡Nuevo método para dibujar la nave!
+    // ¡Nuevo metodo para dibujar la nave!
     public void render(SpriteBatch batch) {
         batch.draw(texture, x, y);
     }
