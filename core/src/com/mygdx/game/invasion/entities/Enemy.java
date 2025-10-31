@@ -1,19 +1,19 @@
 package com.mygdx.game.invasion.entities;
 
-import com.badlogic.gdx.graphics.Texture; // Importa Texture
-import com.badlogic.gdx.graphics.g2d.SpriteBatch; // Para dibujar
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 
-// GM1.4: Clase Abstracta
+// GM1.4: Clase Abstracta - Padre de FastEnemy y TankEnemy
 public abstract class Enemy {
 
     protected Rectangle bounds;
     protected float x, y;
     protected int health;
     protected boolean isDead = false;
-    protected Texture texture; // ¡Ahora tiene una textura!
+    protected Texture texture;
 
-    public Enemy(float x, float y, int health, Texture texture) { // Constructor con textura
+    public Enemy(float x, float y, int health, Texture texture) {
         this.x = x;
         this.y = y;
         this.health = health;
@@ -21,20 +21,10 @@ public abstract class Enemy {
         this.bounds = new Rectangle(x, y, texture.getWidth(), texture.getHeight());
     }
 
-    @Override
+    // Método abstracto que cada hijo debe implementar
     public abstract void update(float delta);
 
-    public void update(float delta) {
-        // (Los hijos implementarán el movimiento)
-        // Actualiza el rectángulo de colisión
-        bounds.setPosition(x, y);
-    }
-
-    public Rectangle getBounds() {
-        return bounds;
-    }
-
-    // ¡Nuevo método para dibujar el enemigo!
+    // Método para dibujar el enemigo
     public void render(SpriteBatch batch) {
         if (texture != null) {
             batch.draw(texture, x, y);
@@ -46,7 +36,14 @@ public abstract class Enemy {
         if (this.health <= 0) this.isDead = true;
     }
 
+    // Actualiza el rectángulo de colisión (llamado por hijos)
+    protected void updateBounds() {
+        bounds.setPosition(x, y);
+    }
+
     public boolean isDead() { return isDead; }
+    public void setDead(boolean dead) { this.isDead = dead; }
     public float getX() { return x; }
     public float getY() { return y; }
+    public Rectangle getBounds() { return bounds; }
 }

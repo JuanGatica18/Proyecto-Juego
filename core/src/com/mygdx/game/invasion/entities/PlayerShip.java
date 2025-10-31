@@ -1,36 +1,36 @@
 package com.mygdx.game.invasion.entities;
 
-import com.mygdx.game.invasion.managers.TextureManager; // Nuevo import
+import com.mygdx.game.invasion.managers.TextureManager;
 import com.mygdx.game.invasion.strategies.shoot.ShootStrategy;
 import com.mygdx.game.invasion.strategies.shoot.SingleShoot;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Texture; // Importa Texture
-import com.badlogic.gdx.graphics.g2d.SpriteBatch; // Para dibujar
-import com.badlogic.gdx.math.Rectangle; // Importa Rectangle
-import com.badlogic.gdx.utils.Array;    // Importa Array
-import com.mygdx.game.invasion.entities.Bullet; // Importa Bullet
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Array;
 
 public class PlayerShip {
 
     private float x, y;
-    private int lives = 3; // <-- ¡VIDAS!
-    private Rectangle bounds; // <-- Para colisiones
-    private float speed = 300f; // Píxeles por segundo
-    private Texture texture; // ¡Ahora tiene una textura!
+    private int lives = 3;
+    private Rectangle bounds;
+    private float speed = 300f;
+    private Texture texture;
 
     private ShootStrategy currentWeapon;
 
     public PlayerShip(float x, float y) {
         this.x = x;
         this.y = y;
-        this.texture = TextureManager.getInstance().getTexture("player_ship"); // Carga la textura
+        this.texture = TextureManager.getInstance().getTexture("player_ship");
         this.currentWeapon = new SingleShoot();
 
         this.bounds = new Rectangle(x, y, texture.getWidth(), texture.getHeight());
     }
 
-    public void update(float delta) {
+    // CORREGIDO: Ahora recibe la lista de balas como parámetro
+    public void update(float delta, Array<Bullet> bullets) {
         // Movimiento libre (arriba, abajo, izquierda, derecha)
         if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             x -= speed * delta;
@@ -53,9 +53,9 @@ public class PlayerShip {
 
         bounds.setPosition(x, y);
 
-        // Disparar
+        // Disparar - ahora pasa correctamente la lista de balas
         if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            fire(bullets); // Pasa la lista de balas al método fire
+            fire(bullets);
         }
     }
 
@@ -68,7 +68,6 @@ public class PlayerShip {
         currentWeapon.shoot(bulletX, bulletY, bullets);
     }
 
-    // ¡Nuevo metodo para dibujar la nave!
     public void render(SpriteBatch batch) {
         batch.draw(texture, x, y);
     }
